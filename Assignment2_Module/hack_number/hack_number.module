@@ -1,0 +1,155 @@
+<?php
+/**
+ * @file
+ * Module to process value on the basis of a logic and give required output.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function hack_number_menu() {
+  $items = array();
+  $items['hack_page'] = array(
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'drupal_get_form',
+    'page arguments' => array('hack_number_form'),
+	'access callback' => TRUE,
+  );
+  
+    $items['hack_page2'] = array(
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'drupal_get_form',
+    'page arguments' => array('get_data_forms'),
+	'access callback' => TRUE,
+  );
+  
+  $items['hack_page3'] = array(
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'show_output',
+	'access callback' => TRUE,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_form().
+ *
+ * To generate a form to insert the number of values that needs to be entered.
+ */
+function hack_number_form($form, &$form_state) { 
+
+  $form['count'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Number of Test Cases',
+    '#required' => TRUE,
+  );
+  
+  $form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Click Here!'),
+  );
+  return $form;
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function hack_number_form_submit($form, &$form_state) { 
+  $_SESSION['form_count'] = $form_state['values']['count'];
+  drupal_goto('hack_page2');
+}
+
+/**
+ * Implements a custom forms().
+ *
+ * To generate a form to insert the values that needs to be manipulated upon.
+ */
+function get_data_forms() {
+  for($i = 0 ; $i < $_SESSION['form_count'] ; $i++) {
+   $form['Dataset'.$i] = array(
+    '#markup' => "<h2>Enter DataSet " . ($i+1) . "</h2><br>",
+  ); 
+  $form['sentence1'.$i] = array(
+    '#type' => 'textfield',
+    '#title' => 'Full String',
+    '#required' => TRUE,
+  );  
+  $form['sentence2'.$i] = array(
+    '#type' => 'textfield',
+    '#title' => 'String to Search',
+    '#required' => TRUE,
+  );  
+  $form['position'.$i] = array(
+    '#type' => 'textfield',
+    '#title' => 'Choice: Y/N',
+    '#required' => TRUE,
+  );  
+  $form['from'.$i] = array(
+    '#type' => 'textfield',
+    '#title' => 'Search From',
+    '#required' => TRUE,
+  );
+  }  
+  $form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Click Here!'),
+  );
+  $form['#submit'][] = 'my_custom_handler';
+  return $form;
+}
+
+/**
+ * Implements a custom handler for the form.
+ *
+ * To generate the output on the basis of the logic required.
+ */
+function my_custom_handler($form, &$form_state) {
+	//print '<pre>'; print_r($form_state); exit;
+	for($i = 0 ; $i < $_SESSION['form_count'] ; $i++) {
+		$len_s1 = strlen($form_state['values']['sentence1'.$i]);
+		$len_s2 = strlen($form_state['values']['sentence2'.$i]);
+		$pos = strpos($form_state['values']['sentence1'.$i], $form_state['values']['sentence2'.$i],$form_state['values']['from'.$i]);	
+		if($pos == TRUE) {
+		    if($form_state['values']['position'.$i] == 'N') {		
+	            $final = $pos;
+		    }
+		    if($form_state['values']['position'.$i] == 'Y') {
+		      if($form_state['values']['sentence1'.$i][$pos-1] == ' ' && $form_state['values']['sentence1'.$i][$pos+$len_s2] == ' ')
+		      {
+		    	  $final = $pos;
+		      }
+		      else if($pos == 0)
+		      {
+		    	 $final = $pos;
+		      }
+		      else if($pos == $len_s1-$len_s2)
+		      {
+		    	  $final = $pos;
+		      }
+		      else
+		      {
+		    	  $final = 'No Worries';
+		      }
+	        
+		    }
+		}
+		else 
+		{
+			$final = 'No Worries';
+		}
+		$form_state['values']['final'.$i] = $final;
+		$arr[$i] = $final;		 
+	}
+	$_SESSION['result'] = $arr;
+	drupal_goto('hack_page3');
+}
+
+/**
+ * Function to display the Output.
+ */
+function show_output() {
+	echo "<p> Output: <p />";
+	foreach($_SESSION['result'] as $output) {
+	echo $output. "<br> ";
+	}
+}
